@@ -39,10 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Listen for messages from the parent window (the Weebly page).
     window.addEventListener('message', (event) => {
-        // Validate the message origin for security.
         if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
             try {
-                // Try to parse the message as JSON.
                 const message = JSON.parse(event.data);
 
                 if (message.type === 'gotoPage' && message.pageNumber) {
@@ -51,10 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } catch (e) {
-                // If JSON parsing fails, it's probably the "start-audio" string.
                 if (event.data === 'start-audio') {
                     if (myAudio && !myAudio.paused) {
-                        // Audio is already playing, do nothing.
                     } else if (myAudio) {
                         myAudio.play().catch(error => {
                             console.error("Audio playback failed:", error);
@@ -71,13 +67,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // New event listener to ensure pdf.js is fully loaded and ready
+    // Event listener to ensure pdf.js viewer is fully loaded and ready
     pdfViewer.addEventListener('load', () => {
         const viewerWindow = pdfViewer.contentWindow;
         if (viewerWindow && viewerWindow.PDFViewerApplication) {
-            // Wait for the pdf.js viewer to report that it's initialized
+            // Wait for the PDF document to be fully initialized and all pages rendered
             viewerWindow.PDFViewerApplication.initializedPromise.then(() => {
                 pdfViewerReady = true;
+            });
+
+            // Listen for the page rendered event for better synchronization
+            viewerWindow.document.addEventListener('pagerendered', (evt) => {
+                // Check if this is the target page for scrolling
+                if (evt.detail.pageNumber === currentPage) {
+                    // Call the scroll function after the page is rendered
+                    smoothHalfPageScroll(currentPage);
+                }
             });
         }
     });
@@ -142,7 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (targetPage !== currentPage && pdfViewerReady) {
             currentPage = targetPage;
-            smoothHalfPageScroll(targetPage);
+            // First, change the PDF.js page, which will trigger the 'pagerendered' event.
+            // The scroll will then be handled by the event listener.
+            const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
+            if (viewerApp) {
+                 viewerApp.page = targetPage;
+            }
         }
     }
 
@@ -155,8 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = viewerApp.appConfig.mainContainer;
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
         if (!pageView) {
-            // Fallback to setting the page directly if the view is not yet rendered
-            viewerApp.page = pageNumber;
             return;
         }
 
