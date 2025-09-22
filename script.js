@@ -39,6 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let scrollQueue = [];
     let isProcessingScroll = false;
 
+    // Helper function for logging with timestamp
+    const logWithTime = (message) => {
+        const now = new Date();
+        const timeString = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}.${String(now.getMilliseconds()).padStart(3, '0')}`;
+        console.log(`[${timeString}] ${message}`);
+    };
+
     // Listen for messages from the parent window (the Weebly page).
     window.addEventListener('message', (event) => {
         if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
@@ -47,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (message.type === 'gotoPage' && message.pageNumber) {
                     if (pdfViewerReady) {
                         scrollQueue.push(message.pageNumber);
+                        logWithTime(`Received 'gotoPage' message for page ${message.pageNumber}. Pushing to queue.`);
                         processScrollQueue();
                     }
                 }
@@ -74,10 +82,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (viewerWindow && viewerWindow.PDFViewerApplication) {
             viewerWindow.PDFViewerApplication.initializedPromise.then(() => {
                 pdfViewerReady = true;
+                logWithTime('PDF.js viewer is ready. Processing scroll queue.');
                 processScrollQueue();
             });
-            viewerWindow.document.addEventListener('pagerendered', () => {
-                processScrollQueue();
+
+            viewerWindow.document.addEventListener('pagerendered', (evt) => {
+                if (evt.detail.pageNumber === currentPage) {
+                    logWithTime(`Page ${evt.detail.pageNumber} rendered. Checking scroll queue.`);
+                    processScrollQueue();
+                }
             });
         }
     });
@@ -86,12 +99,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (scrollQueue.length > 0 && !isProcessingScroll) {
             isProcessingScroll = true;
             const pageNumber = scrollQueue.shift();
+            logWithTime(`Processing scroll for page ${pageNumber}.`);
             smoothHalfPageScroll(pageNumber);
-            // Wait for the scroll animation to finish before processing the next item
             setTimeout(() => {
                 isProcessingScroll = false;
-                processScrollQueue(); // Check for more items
-            }, 600); // Increased timeout
+                processScrollQueue();
+            }, 600);
         }
     }
 
@@ -155,10 +168,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (targetPage !== currentPage && pdfViewerReady) {
             currentPage = targetPage;
-            console.log('Syncing to page:', targetPage);
+            logWithTime(`Audio sync triggered for page ${targetPage}. Adding to queue.`);
             scrollQueue.push(targetPage);
-            // No longer directly setting viewerApp.page here.
-            // Let the smooth scroll command handle the entire transition.
+            // Instead of instantly setting viewerApp.page, let the queue handle it.
         }
     }
 
@@ -170,8 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = viewerApp.appConfig.mainContainer;
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
         if (!pageView) {
-            console.warn(`Page view for page ${pageNumber} not available yet. Re-queueing...`);
+            logWithTime(`Page view for page ${pageNumber} not available. Re-queueing.`);
             scrollQueue.unshift(pageNumber);
+            isProcessingScroll = false;
             return;
         }
 
@@ -179,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const containerHeight = container.clientHeight;
         const targetScrollTop = pageView.div.offsetTop - (containerHeight / 2) + (pageHeight / 2);
         
-        console.log(`Scrolling to page ${pageNumber} at target position:`, targetScrollTop);
+        logWithTime(`Scrolling to page ${pageNumber} at target position: ${targetScrollTop}`);
         container.scrollTo({
             top: targetScrollTop,
             behavior: 'smooth'
