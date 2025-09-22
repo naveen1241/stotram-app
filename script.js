@@ -15,6 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
         1, 2, 3, 4, 5, 6, 7, 8,
     ];
 
+    // Insert the initial timestamp and page map at the beginning
+    audioTimestamps.unshift(1);
+    pdfPageMap.unshift(1);
+
     let lastTimestamp = 673;
     let lastPage = 8;
     const averageShlokaDuration = 84;
@@ -31,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pdfPageMap.push(55);
         }
     }
+
 
     let isPlaying = false;
     let duration = 0;
