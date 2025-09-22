@@ -1,4 +1,6 @@
 // PostMessage listener to start audio from the Weebly page
+// This listener is useful if you have another page sending messages
+// to this one, but for this use case it's not strictly needed here.
 window.addEventListener('message', (event) => {
     // Validate the message origin for security
     if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
@@ -114,7 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPage = targetPage;
             if (pdfViewer.contentWindow) {
                 const pdfMessage = { type: 'gotoPage', pageNumber: targetPage };
-                pdfViewer.contentWindow.postMessage(JSON.stringify(pdfMessage), window.location.origin);
+                
+                // Use the explicit origin of your embedded GitHub page.
+                const githubOrigin = 'https://naveen1241.github.io';
+                pdfViewer.contentWindow.postMessage(JSON.stringify(pdfMessage), githubOrigin);
             }
         }
     }
