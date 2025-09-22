@@ -1,42 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Listen for messages from the parent window (the Weebly page).
-    window.addEventListener('message', (event) => {
-        // Validate the message origin for security.
-        if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
-            try {
-                // Attempt to parse the message as JSON.
-                const message = JSON.parse(event.data);
-
-                if (message.type === 'gotoPage' && message.pageNumber) {
-                    const pdfViewerFrame = document.getElementById('pdf-viewer');
-                    if (pdfViewerFrame && pdfViewerFrame.contentWindow && pdfViewerFrame.contentWindow.PDFViewerApplication) {
-                        pdfViewerFrame.contentWindow.PDFViewerApplication.page = message.pageNumber;
-                    }
-                }
-            } catch (e) {
-                // If parsing fails, it's not a JSON object.
-                // Check if it's the raw 'start-audio' string.
-                if (event.data === 'start-audio') {
-                    const myAudio = document.getElementById('my-audio');
-                    if (myAudio && !myAudio.paused) {
-                        // Audio is already playing, do nothing.
-                    } else if (myAudio) {
-                        myAudio.play();
-                        const playPauseBtn = document.getElementById('play-pause-btn');
-                        if (playPauseBtn) {
-                            playPauseBtn.textContent = '⏸';
-                        }
-                    }
-                } else {
-                    console.error('Failed to parse message or unknown message:', e);
-                }
-            }
-        }
-    });
-
-    // --- All other audio player and PDF synchronization logic goes below ---
-    // (This part is unchanged from the previous response)
-
     const myAudio = document.getElementById('my-audio');
     const pdfViewer = document.getElementById('pdf-viewer');
     const playPauseBtn = document.getElementById('play-pause-btn');
@@ -73,6 +35,39 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPlaying = false;
     let duration = 0;
     let currentPage = 0;
+
+    // Listen for messages from the parent window (the Weebly page).
+    window.addEventListener('message', (event) => {
+        // Validate the message origin for security.
+        if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
+            try {
+                // Try to parse the message as JSON.
+                const message = JSON.parse(event.data);
+
+                if (message.type === 'gotoPage' && message.pageNumber) {
+                    const pdfViewerFrame = document.getElementById('pdf-viewer');
+                    if (pdfViewerFrame && pdfViewerFrame.contentWindow && pdfViewerFrame.contentWindow.PDFViewerApplication) {
+                        pdfViewerFrame.contentWindow.PDFViewerApplication.page = message.pageNumber;
+                    }
+                }
+            } catch (e) {
+                // If JSON parsing fails, it's probably the "start-audio" string.
+                if (event.data === 'start-audio') {
+                    if (myAudio && !myAudio.paused) {
+                        // Audio is already playing, do nothing.
+                    } else if (myAudio) {
+                        myAudio.play();
+                        const playPauseBtn = document.getElementById('play-pause-btn');
+                        if (playPauseBtn) {
+                            playPauseBtn.textContent = '⏸';
+                        }
+                    }
+                } else {
+                    console.error('Failed to parse message or unknown message:', e);
+                }
+            }
+        }
+    });
 
     function createMarkers() {
         if (!myAudio.duration) {
@@ -167,11 +162,11 @@ document.addEventListener('DOMContentLoaded', () => {
         isPlaying = false;
         currentPage = 0;
     });
-
+    
     if (volumeSlider) {
         myAudio.volume = volumeSlider.value / 100;
     }
-
+    
     if (myAudio.readyState >= 2) {
         duration = myAudio.duration;
         createMarkers();
