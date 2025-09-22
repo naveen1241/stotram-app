@@ -44,13 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
             try {
                 const message = JSON.parse(event.data);
-
                 if (message.type === 'gotoPage' && message.pageNumber) {
                     if (pdfViewerReady) {
-                        const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
-                        if (viewerApp) {
-                            viewerApp.page = message.pageNumber;
-                        }
+                        scrollQueue.push(message.pageNumber);
+                        processScrollQueue();
                     }
                 }
             } catch (e) {
@@ -79,12 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 pdfViewerReady = true;
                 processScrollQueue();
             });
-
-            viewerWindow.document.addEventListener('pagerendered', (evt) => {
-                // Ensure the event is for the current target page.
-                if (evt.detail.pageNumber === currentPage) {
-                    processScrollQueue();
-                }
+            viewerWindow.document.addEventListener('pagerendered', () => {
+                processScrollQueue();
             });
         }
     });
@@ -94,9 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
             isProcessingScroll = true;
             const pageNumber = scrollQueue.shift();
             smoothHalfPageScroll(pageNumber);
+            // Wait for the scroll animation to finish before processing the next item
             setTimeout(() => {
                 isProcessingScroll = false;
-            }, 500); // Allow time for the scroll to complete before processing the next item
+                processScrollQueue(); // Check for more items
+            }, 600); // Increased timeout
         }
     }
 
@@ -162,10 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPage = targetPage;
             console.log('Syncing to page:', targetPage);
             scrollQueue.push(targetPage);
-            const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
-            if (viewerApp) {
-                viewerApp.page = targetPage;
-            }
+            // No longer directly setting viewerApp.page here.
+            // Let the smooth scroll command handle the entire transition.
         }
     }
 
@@ -178,8 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
         if (!pageView) {
             console.warn(`Page view for page ${pageNumber} not available yet. Re-queueing...`);
-            scrollQueue.unshift(pageNumber); // Push to the front of the queue
-            isProcessingScroll = false; // Release the lock
+            scrollQueue.unshift(pageNumber);
             return;
         }
 
