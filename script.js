@@ -1,6 +1,15 @@
-    <script>
-        // PASTE THE CORRECTED JAVASCRIPT HERE
+// Add this event listener to the top of your script.js file
+window.addEventListener('message', (event) => {
+    if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
+        if (event.data === 'start-audio') {
+            myAudio.play();
+            playPauseBtn.textContent = '⏸';
+            isPlaying = true;
+        }
+    }
+});
 
+// PASTE YOUR ORIGINAL SCRIPT.JS CODE HERE, AFTER THE LISTENER
 document.addEventListener('DOMContentLoaded', () => {
     // Variable declarations for all elements
     const myAudio = document.getElementById('my-audio');
@@ -12,31 +21,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const speedSelect = document.getElementById('speed-select');
     const volumeSlider = document.getElementById('volume-slider');
 
-    // **IMPORTANT**: This is a logical estimation.
-    // For perfect sync, manually adjust the timestamps and page maps.
+    // ... (rest of your existing code)
     const audioTimestamps = [
-        93, 175, 258, 345, 414, 497, 585, 673, // Your provided timestamps
+        93, 175, 258, 345, 414, 497, 585, 673,
     ];
     const pdfPageMap = [
-        1, 2, 3, 4, 5, 6, 7, 8, // Your provided page numbers
+        1, 2, 3, 4, 5, 6, 7, 8,
     ];
 
-    // To fill the rest of the arrays for a full 108 shlokas and 55 pages:
     let lastTimestamp = 673;
     let lastPage = 8;
-    const averageShlokaDuration = 84; // Based on your provided data
+    const averageShlokaDuration = 84;
     for (let i = 8; i < 108; i++) {
         lastTimestamp += averageShlokaDuration;
         audioTimestamps.push(lastTimestamp);
 
-        // Map two shlokas per page, adjusting for the 55-page PDF
         if (i % 2 === 0) {
             lastPage++;
         }
-        if (lastPage <= 55) { // Ensure page number does not exceed 55
+        if (lastPage <= 55) {
             pdfPageMap.push(lastPage);
         } else {
-            pdfPageMap.push(55); // Use the last page if needed
+            pdfPageMap.push(55);
         }
     }
 
@@ -110,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPage = targetPage;
             if (pdfViewer.contentWindow) {
                 const pdfMessage = { type: 'gotoPage', pageNumber: targetPage };
-                // Send message to the iframe with its own origin
                 pdfViewer.contentWindow.postMessage(JSON.stringify(pdfMessage), window.location.origin);
             }
         }
@@ -159,7 +164,3 @@ document.addEventListener('DOMContentLoaded', () => {
         createMarkers();
     }
 });
-
-
-
-    </script>
