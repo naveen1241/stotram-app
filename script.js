@@ -12,13 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
         1, 93, 175, 258, 345, 414, 497, 585, 673,
     ];
     const pdfPageMap = [
-        1, 1, 2, 3, 4, 5, 6, 7, 8,
+         1, 2, 3, 4, 5, 6, 7, 8, 9,
     ];
 
     let lastTimestamp = 673;
-    let lastPage = 8;
+    let lastPage = 9;
     const averageShlokaDuration = 84;
-    for (let i = 8; i < 108; i++) {
+    for (let i = 9; i < 108; i++) {
         lastTimestamp += averageShlokaDuration;
         audioTimestamps.push(lastTimestamp);
 
@@ -45,12 +45,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (message.type === 'gotoPage' && message.pageNumber) {
                     if (pdfViewerReady) {
-                        smoothHalfPageScroll(message.pageNumber);
+                        const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
+                        if (viewerApp) {
+                            viewerApp.page = message.pageNumber;
+                        }
                     }
                 }
             } catch (e) {
                 if (event.data === 'start-audio') {
                     if (myAudio && !myAudio.paused) {
+                        // Audio is already playing, do nothing.
                     } else if (myAudio) {
                         myAudio.play().catch(error => {
                             console.error("Audio playback failed:", error);
@@ -67,20 +71,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Event listener to ensure pdf.js viewer is fully loaded and ready
     pdfViewer.addEventListener('load', () => {
         const viewerWindow = pdfViewer.contentWindow;
         if (viewerWindow && viewerWindow.PDFViewerApplication) {
-            // Wait for the PDF document to be fully initialized and all pages rendered
             viewerWindow.PDFViewerApplication.initializedPromise.then(() => {
                 pdfViewerReady = true;
             });
 
-            // Listen for the page rendered event for better synchronization
+            // Listen for the page rendered event for better synchronization.
             viewerWindow.document.addEventListener('pagerendered', (evt) => {
-                // Check if this is the target page for scrolling
+                // Ensure the event is for the current target page.
                 if (evt.detail.pageNumber === currentPage) {
-                    // Call the scroll function after the page is rendered
                     smoothHalfPageScroll(currentPage);
                 }
             });
@@ -148,10 +149,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetPage !== currentPage && pdfViewerReady) {
             currentPage = targetPage;
             // First, change the PDF.js page, which will trigger the 'pagerendered' event.
-            // The scroll will then be handled by the event listener.
+            // The smooth scroll will then be handled by the event listener.
             const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
             if (viewerApp) {
-                 viewerApp.page = targetPage;
+                viewerApp.page = targetPage;
             }
         }
     }
@@ -165,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = viewerApp.appConfig.mainContainer;
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
         if (!pageView) {
-            return;
+            return; // Exit if the page view is not available.
         }
 
         const pageHeight = pageView.div.clientHeight;
