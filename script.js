@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // This script contains all audio control logic and responds to the user's clicks.
     const myAudio = document.getElementById('my-audio');
     const pdfViewer = document.getElementById('pdf-viewer');
     const playPauseBtn = document.getElementById('play-pause-btn');
@@ -36,22 +35,49 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPlaying = false;
     let duration = 0;
     let currentPage = 0;
+    let pdfViewerReady = false;
 
-    // The message listener can be simplified as no 'start-audio' message is needed anymore.
+    // Listen for messages from the parent window (the Weebly page).
     window.addEventListener('message', (event) => {
+        // Validate the message origin for security.
         if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
             try {
+                // Try to parse the message as JSON.
                 const message = JSON.parse(event.data);
+
                 if (message.type === 'gotoPage' && message.pageNumber) {
-                    const pdfViewerFrame = document.getElementById('pdf-viewer');
-                    if (pdfViewerFrame && pdfViewerFrame.contentWindow && pdfViewerFrame.contentWindow.PDFViewerApplication) {
-                        pdfViewerFrame.contentWindow.PDFViewerApplication.page = message.pageNumber;
+                    if (pdfViewerReady) {
+                        smoothHalfPageScroll(message.pageNumber);
                     }
                 }
             } catch (e) {
-                // Now, any invalid JSON will be logged, not treated as a valid command.
-                console.error('Failed to parse message:', e);
+                // If JSON parsing fails, it's probably the "start-audio" string.
+                if (event.data === 'start-audio') {
+                    if (myAudio && !myAudio.paused) {
+                        // Audio is already playing, do nothing.
+                    } else if (myAudio) {
+                        myAudio.play().catch(error => {
+                            console.error("Audio playback failed:", error);
+                        });
+                        const playPauseBtn = document.getElementById('play-pause-btn');
+                        if (playPauseBtn) {
+                            playPauseBtn.textContent = '⏸';
+                        }
+                    }
+                } else {
+                    console.error('Failed to parse message or unknown message:', e);
+                }
             }
+        }
+    });
+
+    // New event listener to ensure pdf.js is fully loaded and ready
+    pdfViewer.addEventListener('load', () => {
+        const viewerWindow = pdfViewer.contentWindow;
+        if (viewerWindow && viewerWindow.PDFViewerApplication) {
+            viewerWindow.PDFViewerApplication.initializedPromise.then(() => {
+                pdfViewerReady = true;
+            });
         }
     });
 
@@ -96,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             myAudio.play().catch(error => {
                 console.error("Audio playback failed:", error);
-                // Handle the error gracefully, e.g., show a message to the user.
                 alert("Playback could not start. Please click the play button again.");
             });
             playPauseBtn.textContent = '⏸';
@@ -114,12 +139,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             }
         }
-        if (targetPage !== currentPage) {
+        if (targetPage !== currentPage && pdfViewerReady) {
             currentPage = targetPage;
-            if (pdfViewer && pdfViewer.contentWindow && pdfViewer.contentWindow.PDFViewerApplication) {
-                pdfViewer.contentWindow.PDFViewerApplication.page = targetPage;
-            }
+            smoothHalfPageScroll(targetPage);
         }
+    }
+
+    // Function to handle the smooth half-page scroll
+    function smoothHalfPageScroll(pageNumber) {
+        const viewerWindow = pdfViewer.contentWindow;
+        if (!viewerWindow || !viewerWindow.PDFViewerApplication) return;
+        
+        const viewerApp = viewerWindow.PDFViewerApplication;
+        const container = viewerApp.appConfig.mainContainer;
+        const pageView = viewerApp.pageViews.get(pageNumber - 1);
+        if (!pageView) {
+            // If the page view isn't available yet, set the page directly as a fallback.
+            viewerApp.page = pageNumber;
+            return;
+        }
+
+        const pageHeight = pageView.div.clientHeight;
+        const targetScrollTop = pageView.div.offsetTop - (container.clientHeight / 2) + (pageHeight / 2);
+        
+        container.scrollTo({
+            top: targetScrollTop,
+            behavior: 'smooth'
+        });
     }
 
     playPauseBtn.addEventListener('click', togglePlayPause);
