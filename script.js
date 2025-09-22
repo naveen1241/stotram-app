@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 0;
     let pdfViewerReady = false;
     let scrollQueue = [];
+    let isProcessingScroll = false;
 
     // Listen for messages from the parent window (the Weebly page).
     window.addEventListener('message', (event) => {
@@ -46,15 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (message.type === 'gotoPage' && message.pageNumber) {
                     if (pdfViewerReady) {
-                        const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
-                        if (viewerApp) {
-                            viewerApp.page = message.pageNumber;
-                        }
+                        scrollQueue.push(message.pageNumber);
+                        processScrollQueue();
                     }
                 }
             } catch (e) {
                 if (event.data === 'start-audio') {
                     if (myAudio && !myAudio.paused) {
+                        // Audio is already playing, do nothing.
                     } else if (myAudio) {
                         myAudio.play().catch(error => {
                             console.error("Audio playback failed:", error);
@@ -79,19 +79,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 processScrollQueue();
             });
 
-            viewerWindow.document.addEventListener('pagerendered', (evt) => {
-                if (evt.detail.pageNumber === currentPage) {
-                    processScrollQueue();
-                }
+            viewerWindow.document.addEventListener('pagerendered', () => {
+                processScrollQueue();
             });
         }
     });
 
-    // New function to process the scroll queue
     function processScrollQueue() {
-        if (scrollQueue.length > 0) {
+        if (scrollQueue.length > 0 && !isProcessingScroll) {
+            isProcessingScroll = true;
             const pageNumber = scrollQueue.shift();
             smoothHalfPageScroll(pageNumber);
+            setTimeout(() => {
+                isProcessingScroll = false;
+            }, 500); // Allow time for the scroll to complete before processing the next item
         }
     }
 
@@ -157,11 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPage = targetPage;
             // Add the new page to the queue.
             scrollQueue.push(targetPage);
-            // Jump to the page immediately to start rendering.
-            const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
-            if (viewerApp) {
-                viewerApp.page = targetPage;
-            }
+            processScrollQueue();
         }
     }
 
@@ -172,8 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewerApp = viewerWindow.PDFViewerApplication;
         const container = viewerApp.appConfig.mainContainer;
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
+
         if (!pageView) {
-            return; // Exit if the page view is not available yet.
+            // Fallback: If page view not ready, try again on next queue process
+            scrollQueue.unshift(pageNumber);
+            return;
         }
 
         const pageHeight = pageView.div.clientHeight;
