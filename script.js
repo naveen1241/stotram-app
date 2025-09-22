@@ -80,8 +80,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 processScrollQueue();
             });
 
-            viewerWindow.document.addEventListener('pagerendered', () => {
-                processScrollQueue();
+            viewerWindow.document.addEventListener('pagerendered', (evt) => {
+                // Ensure the event is for the current target page.
+                if (evt.detail.pageNumber === currentPage) {
+                    processScrollQueue();
+                }
             });
         }
     });
@@ -157,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (targetPage !== currentPage && pdfViewerReady) {
             currentPage = targetPage;
+            console.log('Syncing to page:', targetPage);
             scrollQueue.push(targetPage);
             const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
             if (viewerApp) {
@@ -173,7 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = viewerApp.appConfig.mainContainer;
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
         if (!pageView) {
-            scrollQueue.unshift(pageNumber);
+            console.warn(`Page view for page ${pageNumber} not available yet. Re-queueing...`);
+            scrollQueue.unshift(pageNumber); // Push to the front of the queue
+            isProcessingScroll = false; // Release the lock
             return;
         }
 
@@ -181,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const containerHeight = container.clientHeight;
         const targetScrollTop = pageView.div.offsetTop - (containerHeight / 2) + (pageHeight / 2);
         
+        console.log(`Scrolling to page ${pageNumber} at target position:`, targetScrollTop);
         container.scrollTo({
             top: targetScrollTop,
             behavior: 'smooth'
