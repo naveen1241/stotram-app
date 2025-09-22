@@ -47,14 +47,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (message.type === 'gotoPage' && message.pageNumber) {
                     if (pdfViewerReady) {
-                        scrollQueue.push(message.pageNumber);
-                        processScrollQueue();
+                        const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
+                        if (viewerApp) {
+                            viewerApp.page = message.pageNumber;
+                        }
                     }
                 }
             } catch (e) {
                 if (event.data === 'start-audio') {
                     if (myAudio && !myAudio.paused) {
-                        // Audio is already playing, do nothing.
                     } else if (myAudio) {
                         myAudio.play().catch(error => {
                             console.error("Audio playback failed:", error);
@@ -156,9 +157,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (targetPage !== currentPage && pdfViewerReady) {
             currentPage = targetPage;
-            // Add the new page to the queue.
             scrollQueue.push(targetPage);
-            processScrollQueue();
+            const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
+            if (viewerApp) {
+                viewerApp.page = targetPage;
+            }
         }
     }
 
@@ -169,9 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewerApp = viewerWindow.PDFViewerApplication;
         const container = viewerApp.appConfig.mainContainer;
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
-
         if (!pageView) {
-            // Fallback: If page view not ready, try again on next queue process
             scrollQueue.unshift(pageNumber);
             return;
         }
