@@ -4,228 +4,191 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audio-Synced Stotram</title>
-    <!-- Your CSS will go here -->
     <style>
-/* Olive Dark Green Theme */
-:root {
-    --primary-bg: #263238;
-    --secondary-bg: #37474f;
-    --accent-color: #6d8e57;
-    --text-color: #cfd8dc;
-    --light-text: #eceff1;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    background-color: var(--primary-bg);
-    color: var(--text-color);
-    margin: 0;
-    padding: 0;
-}
-
-.container-wrapper {
-    display: flex;
-    flex-direction: column;
-    height: 80vh;
-    background-color: var(--primary-bg);
-}
-
-.controls {
-    padding: 20px;
-    background-color: var(--secondary-bg);
-    border-bottom: 2px solid var(--accent-color);
-}
-
-.pdf-container {
-    flex: 1;
-    border: 1px solid var(--accent-color);
-    margin-top: 10px;
-}
-
-iframe {
-    border: none;
-    width: 100%;
-    height: 100%;
-}
-
-/* Custom audio player styles */
-.custom-audio-player {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 10px;
-    background-color: var(--primary-bg);
-    border-radius: 8px;
-}
-
-.play-pause-btn {
-    background-color: var(--accent-color);
-    border: none;
-    color: var(--light-text);
-    font-size: 20px;
-    padding: 10px 15px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.play-pause-btn:hover {
-    background-color: #8da47f;
-}
-
-/* --- Corrected Progress Bar Styles --- */
-.progress-bar-container {
-    flex-grow: 1;
-    height: 10px;
-    background-color: #546e7a; /* Background for the track */
-    border-radius: 4px;
-    position: relative; /* CRITICAL: Establishes a positioning context for children */
-    cursor: pointer;
-    overflow: hidden; /* Ensures nothing spills out of the bar */
-    /* Add z-index if necessary to ensure it's on top */
-    z-index: 10;
-}
-
-.progress-bar {
-    height: 100%;
-    background-color: var(--accent-color); /* The filled portion */
-    border-radius: 4px;
-    width: 0;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-/* Marker and Label Styles */
-.marker {
-    position: absolute; /* Positions markers relative to the container */
-    top: 0;
-    width: 1px; /* The thickness of the marker line */
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.5); /* Semi-transparent markers */
-    z-index: 12; /* Places markers on top of the progress bar */
-}
-
-.marker-label {
-    position: absolute;
-    top: -20px; /* Position the label above the marker */
-    left: 50%;
-    transform: translateX(-50%); /* Horizontally center the label */
-    background-color: var(--secondary-bg);
-    color: var(--light-text);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    white-space: nowrap; /* Prevent the label from wrapping */
-    pointer-events: none; /* Make sure the label is not clickable */
-    opacity: 0; /* Initially hide the label */
-    transition: opacity 0.2s ease;
-}
-
-.marker:hover .marker-label {
-    opacity: 1; /* Show the label on hover */
-}
-
-
-.time-display {
-    font-size: 14px;
-    color: var(--text-color);
-    width: 80px;
-    text-align: center;
-}
-
-.speed-control {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.speed-control select {
-    background-color: var(--secondary-bg);
-    color: var(--light-text);
-    border: 1px solid var(--accent-color);
-    border-radius: 4px;
-    padding: 4px;
-    cursor: pointer;
-}
-
-/* Volume Control */
-.volume-control {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.volume-control input[type="range"] {
-    -webkit-appearance: none;
-    width: 80px;
-    height: 4px;
-    background: #546e7a;
-    border-radius: 2px;
-    cursor: pointer;
-}
-.volume-control input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    height: 12px;
-    width: 12px;
-    border-radius: 50%;
-    background: var(--accent-color);
-}
-
-
-
-
+        /* Olive Dark Green Theme */
+        :root {
+            --primary-bg: #263238;
+            --secondary-bg: #37474f;
+            --accent-color: #6d8e57;
+            --text-color: #cfd8dc;
+            --light-text: #eceff1;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+        .container-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            background-color: var(--primary-bg);
+        }
+        .controls {
+            padding: 20px;
+            background-color: var(--secondary-bg);
+            border-bottom: 2px solid var(--accent-color);
+        }
+        .pdf-container {
+            flex: 1;
+            border: 1px solid var(--accent-color);
+            margin-top: 10px;
+        }
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+        .custom-audio-player {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background-color: var(--primary-bg);
+            border-radius: 8px;
+        }
+        .play-pause-btn {
+            background-color: var(--accent-color);
+            border: none;
+            color: var(--light-text);
+            font-size: 20px;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .play-pause-btn:hover {
+            background-color: #8da47f;
+        }
+        .progress-bar-container {
+            flex-grow: 1;
+            height: 10px;
+            background-color: #546e7a;
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            z-index: 10;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent-color);
+            border-radius: 4px;
+            width: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .marker {
+            position: absolute;
+            top: 0;
+            width: 1px;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.5);
+            z-index: 12;
+        }
+        .marker-label {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--secondary-bg);
+            color: var(--light-text);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .marker:hover .marker-label {
+            opacity: 1;
+        }
+        .time-display {
+            font-size: 14px;
+            color: var(--text-color);
+            width: 80px;
+            text-align: center;
+        }
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .speed-control select {
+            background-color: var(--secondary-bg);
+            color: var(--light-text);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            padding: 4px;
+            cursor: pointer;
+        }
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .volume-control input[type="range"] {
+            -webkit-appearance: none;
+            width: 80px;
+            height: 4px;
+            background: #546e7a;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: var(--accent-color);
+        }
     </style>
 </head>
 <body>
-    <!-- Your HTML body content will go here -->
-    <!-- PASTE THE CORRECTED HTML BODY HERE -->
-<div class="container-wrapper">
-    <div class="controls">
-        <h1>Audio-Synced Stotram</h1>
-        <p>Play the audio to automatically scroll the document. Adjust the speed as needed.</p>
-        
-        <!-- Audio source with native controls removed to prevent a duplicate progress bar -->
-        <audio id="my-audio" src="./pdfjs-viewer/VSN_Full_Stotram.mp3"></audio>
-
-        <!-- Custom audio player -->
-        <div class="custom-audio-player">
-            <button id="play-pause-btn" class="play-pause-btn">▶</button>
+    <div class="container-wrapper">
+        <div class="controls">
+            <h1>Audio-Synced Stotram</h1>
+            <p>Play the audio to automatically scroll the document. Adjust the speed as needed.</p>
             
-            <!-- Combined progress bar and marker container -->
-            <div id="progress-bar-container" class="progress-bar-container">
-                <div class="progress-bar" id="progress-bar"></div>
-            </div>
+            <audio id="my-audio" src="./pdfjs-viewer/VSN_Full_Stotram.mp3"></audio>
             
-            <div class="time-display">00:00 / 00:00</div>
-            
-            <div class="speed-control">
-                <span>Speed:</span>
-                <select id="speed-select">
-                    <option value="0.5">0.5x</option>
-                    <option value="0.75">0.75x</option>
-                    <option value="1" selected>1x</option>
-                    <option value="1.25">1.25x</option>
-                    <option value="1.5">1.5x</option>
-                    <option value="2">2x</option>
-                </select>
-            </div>
-            
-            <!-- Volume Control -->
-            <div class="volume-control">
-                <span>□</span>
-                <input type="range" id="volume-slider" min="0" max="100" value="50">
+            <div class="custom-audio-player">
+                <button id="play-pause-btn" class="play-pause-btn">▶</button>
+                <div id="progress-bar-container" class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                
+                <div class="time-display">00:00 / 00:00</div>
+                
+                <div class="speed-control">
+                    <span>Speed:</span>
+                    <select id="speed-select">
+                        <option value="0.5">0.5x</option>
+                        <option value="0.75">0.75x</option>
+                        <option value="1" selected>1x</option>
+                        <option value="1.25">1.25x</option>
+                        <option value="1.5">1.5x</option>
+                        <option value="2">2x</option>
+                    </select>
+                </div>
+                
+                <div class="volume-control">
+                    <span>□</span>
+                    <input type="range" id="volume-slider" min="0" max="100" value="50">
+                </div>
             </div>
         </div>
+        <div class="pdf-container">
+            <iframe id="pdf-viewer"
+                src="./pdfjs-viewer/web/viewer.html?file=../VSN_Scrolling_Stotram.pdf">
+            </iframe>
+        </div>
     </div>
-    <div class="pdf-container">
-        <!-- PDF source using the full absolute URL -->
-        <iframe id="pdf-viewer"
-            src="./pdfjs-viewer/web/viewer.html?file=https://naveen1241.github.io/pdfjs-viewer/VSN_Scrolling_Stotram.pdf">
-        </iframe>
-    </div>
-</div>
-
-    <!-- Your JavaScript will go here -->
-<script src="script.js"></script>
+    
+    <script src="script.js"></script>
 </body>
 </html>
