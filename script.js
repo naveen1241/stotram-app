@@ -1,17 +1,23 @@
-// Add this event listener to the top of your script.js file
+// PostMessage listener to start audio from the Weebly page
 window.addEventListener('message', (event) => {
+    // Validate the message origin for security
     if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
         if (event.data === 'start-audio') {
-            myAudio.play();
-            playPauseBtn.textContent = '⏸';
-            isPlaying = true;
+            const myAudio = document.getElementById('my-audio');
+            if (myAudio && !myAudio.paused) {
+                // If the audio is playing, do nothing to avoid restarting.
+            } else if (myAudio) {
+                myAudio.play();
+                const playPauseBtn = document.getElementById('play-pause-btn');
+                if (playPauseBtn) {
+                    playPauseBtn.textContent = '⏸';
+                }
+            }
         }
     }
 });
 
-// PASTE YOUR ORIGINAL SCRIPT.JS CODE HERE, AFTER THE LISTENER
 document.addEventListener('DOMContentLoaded', () => {
-    // Variable declarations for all elements
     const myAudio = document.getElementById('my-audio');
     const pdfViewer = document.getElementById('pdf-viewer');
     const playPauseBtn = document.getElementById('play-pause-btn');
@@ -21,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const speedSelect = document.getElementById('speed-select');
     const volumeSlider = document.getElementById('volume-slider');
 
-    // ... (rest of your existing code)
     const audioTimestamps = [
         93, 175, 258, 345, 414, 497, 585, 673,
     ];
@@ -50,32 +55,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let duration = 0;
     let currentPage = 0;
 
-    // --- Create progress bar markers dynamically ---
     function createMarkers() {
         if (!myAudio.duration) {
             myAudio.addEventListener('loadedmetadata', createMarkers, { once: true });
             return;
         }
-
         const totalDuration = myAudio.duration;
         progressBarContainer.querySelectorAll('.marker').forEach(marker => marker.remove());
-
         audioTimestamps.forEach((timestamp, index) => {
             const marker = document.createElement('div');
             marker.className = 'marker';
             const markerPosition = (timestamp / totalDuration) * 100;
             marker.style.left = `${markerPosition}%`;
-            
             const label = document.createElement('span');
             label.className = 'marker-label';
             label.textContent = `Shlokam ${index + 1}`;
-            
             marker.appendChild(label);
             progressBarContainer.appendChild(marker);
         });
     }
 
-    // --- Audio control functions ---
     function formatTime(seconds) {
         const minutes = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
@@ -111,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             }
         }
-        
         if (targetPage !== currentPage) {
             currentPage = targetPage;
             if (pdfViewer.contentWindow) {
@@ -121,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Event Listeners ---
     playPauseBtn.addEventListener('click', togglePlayPause);
     speedSelect.addEventListener('change', (event) => {
         myAudio.playbackRate = parseFloat(event.target.value);
@@ -153,12 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPage = 0;
     });
     
-    // Set initial volume
     if (volumeSlider) {
         myAudio.volume = volumeSlider.value / 100;
     }
     
-    // Create markers if metadata is already loaded
     if (myAudio.readyState >= 2) {
         duration = myAudio.duration;
         createMarkers();
