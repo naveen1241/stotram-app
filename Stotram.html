@@ -13,19 +13,23 @@
             --text-color: #cfd8dc;
             --light-text: #eceff1;
         }
-        body {
-            font-family: Arial, sans-serif;
-            background-color: var(--primary-bg);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-        }
-        .container-wrapper {
-            display: flex;
-            flex-direction: column;
-            height: 80vh;
-            background-color: var(--primary-bg);
-        }
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+}
+.container-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Or use 100% if the body has a consistent height */
+    background-color: var(--primary-bg);
+}
         .controls {
             padding: 20px;
             background-color: var(--secondary-bg);
@@ -192,3 +196,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+
