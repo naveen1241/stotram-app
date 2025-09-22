@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // This script contains all audio control logic and responds to the user's clicks.
     const myAudio = document.getElementById('my-audio');
     const pdfViewer = document.getElementById('pdf-viewer');
     const playPauseBtn = document.getElementById('play-pause-btn');
@@ -36,14 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let duration = 0;
     let currentPage = 0;
 
-    // Listen for messages from the parent window (the Weebly page).
+    // The message listener can be simplified as no 'start-audio' message is needed anymore.
     window.addEventListener('message', (event) => {
-        // Validate the message origin for security.
         if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
             try {
-                // Try to parse the message as JSON.
                 const message = JSON.parse(event.data);
-
                 if (message.type === 'gotoPage' && message.pageNumber) {
                     const pdfViewerFrame = document.getElementById('pdf-viewer');
                     if (pdfViewerFrame && pdfViewerFrame.contentWindow && pdfViewerFrame.contentWindow.PDFViewerApplication) {
@@ -51,20 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } catch (e) {
-                // If JSON parsing fails, it's probably the "start-audio" string.
-                if (event.data === 'start-audio') {
-                    if (myAudio && !myAudio.paused) {
-                        // Audio is already playing, do nothing.
-                    } else if (myAudio) {
-                        myAudio.play();
-                        const playPauseBtn = document.getElementById('play-pause-btn');
-                        if (playPauseBtn) {
-                            playPauseBtn.textContent = '⏸';
-                        }
-                    }
-                } else {
-                    console.error('Failed to parse message or unknown message:', e);
-                }
+                // Now, any invalid JSON will be logged, not treated as a valid command.
+                console.error('Failed to parse message:', e);
             }
         }
     });
@@ -108,7 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
             myAudio.pause();
             playPauseBtn.textContent = '▶';
         } else {
-            myAudio.play();
+            myAudio.play().catch(error => {
+                console.error("Audio playback failed:", error);
+                // Handle the error gracefully, e.g., show a message to the user.
+                alert("Playback could not start. Please click the play button again.");
+            });
             playPauseBtn.textContent = '⏸';
         }
         isPlaying = !isPlaying;
