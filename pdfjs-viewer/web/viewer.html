@@ -783,5 +783,29 @@ See https://github.com/adobe-type-tools/cmap-resources
 
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
+
+
+<script>
+  window.addEventListener('message', function(event) {
+    // Only accept messages from the expected origin for security
+    if (event.origin !== window.location.origin) {
+        return;
+    }
+    try {
+      const data = JSON.parse(event.data);
+      if (data && data.type === 'gotoPage' && typeof data.pageNumber === 'number') {
+        // Check if the PDFViewerApplication is available
+        if (window.PDFViewerApplication) {
+          window.PDFViewerApplication.page = data.pageNumber;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse postMessage data or execute command:', e);
+    }
+  });
+</script>
+
+
+      
   </body>
 </html>
