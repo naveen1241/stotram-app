@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
         1, 93, 175, 258, 345, 414, 497, 585, 673,
     ];
     const pdfPageMap = [
-         1, 2, 3, 4, 5, 6, 7, 8, 9,
+        1, 2, 3, 4, 5, 6, 7, 8, 9,
     ];
 
     let lastTimestamp = 673;
@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let duration = 0;
     let currentPage = 0;
     let pdfViewerReady = false;
+    let scrollQueue = [];
 
     // Listen for messages from the parent window (the Weebly page).
     window.addEventListener('message', (event) => {
@@ -54,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) {
                 if (event.data === 'start-audio') {
                     if (myAudio && !myAudio.paused) {
-                        // Audio is already playing, do nothing.
                     } else if (myAudio) {
                         myAudio.play().catch(error => {
                             console.error("Audio playback failed:", error);
@@ -76,17 +76,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (viewerWindow && viewerWindow.PDFViewerApplication) {
             viewerWindow.PDFViewerApplication.initializedPromise.then(() => {
                 pdfViewerReady = true;
+                processScrollQueue();
             });
 
-            // Listen for the page rendered event for better synchronization.
             viewerWindow.document.addEventListener('pagerendered', (evt) => {
-                // Ensure the event is for the current target page.
                 if (evt.detail.pageNumber === currentPage) {
-                    smoothHalfPageScroll(currentPage);
+                    processScrollQueue();
                 }
             });
         }
     });
+
+    // New function to process the scroll queue
+    function processScrollQueue() {
+        if (scrollQueue.length > 0) {
+            const pageNumber = scrollQueue.shift();
+            smoothHalfPageScroll(pageNumber);
+        }
+    }
 
     function createMarkers() {
         if (!myAudio.duration) {
@@ -148,8 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (targetPage !== currentPage && pdfViewerReady) {
             currentPage = targetPage;
-            // First, change the PDF.js page, which will trigger the 'pagerendered' event.
-            // The smooth scroll will then be handled by the event listener.
+            // Add the new page to the queue.
+            scrollQueue.push(targetPage);
+            // Jump to the page immediately to start rendering.
             const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
             if (viewerApp) {
                 viewerApp.page = targetPage;
@@ -157,7 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Function to handle the smooth half-page scroll
     function smoothHalfPageScroll(pageNumber) {
         const viewerWindow = pdfViewer.contentWindow;
         if (!viewerWindow || !viewerWindow.PDFViewerApplication) return;
@@ -166,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = viewerApp.appConfig.mainContainer;
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
         if (!pageView) {
-            return; // Exit if the page view is not available.
+            return; // Exit if the page view is not available yet.
         }
 
         const pageHeight = pageView.div.clientHeight;
