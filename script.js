@@ -9,15 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const volumeSlider = document.getElementById('volume-slider');
 
     const audioTimestamps = [
-        93, 175, 258, 345, 414, 497, 585, 673,
+        1, 93, 175, 258, 345, 414, 497, 585, 673,
     ];
     const pdfPageMap = [
-        1, 2, 3, 4, 5, 6, 7, 8,
+        1, 1, 2, 3, 4, 5, 6, 7, 8,
     ];
-
-    // Insert the initial timestamp and page map at the beginning
-    audioTimestamps.unshift(1);
-    pdfPageMap.unshift(1);
 
     let lastTimestamp = 673;
     let lastPage = 8;
@@ -35,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
             pdfPageMap.push(55);
         }
     }
-
 
     let isPlaying = false;
     let duration = 0;
@@ -80,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pdfViewer.addEventListener('load', () => {
         const viewerWindow = pdfViewer.contentWindow;
         if (viewerWindow && viewerWindow.PDFViewerApplication) {
+            // Wait for the pdf.js viewer to report that it's initialized
             viewerWindow.PDFViewerApplication.initializedPromise.then(() => {
                 pdfViewerReady = true;
             });
@@ -159,13 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = viewerApp.appConfig.mainContainer;
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
         if (!pageView) {
-            // If the page view isn't available yet, set the page directly as a fallback.
+            // Fallback to setting the page directly if the view is not yet rendered
             viewerApp.page = pageNumber;
             return;
         }
 
         const pageHeight = pageView.div.clientHeight;
-        const targetScrollTop = pageView.div.offsetTop - (container.clientHeight / 2) + (pageHeight / 2);
+        const containerHeight = container.clientHeight;
+        const targetScrollTop = pageView.div.offsetTop - (containerHeight / 2) + (pageHeight / 2);
         
         container.scrollTo({
             top: targetScrollTop,
