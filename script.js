@@ -1,25 +1,27 @@
-// PostMessage listener to start audio from the Weebly page
-// This listener is useful if you have another page sending messages
-// to this one, but for this use case it's not strictly needed here.
-window.addEventListener('message', (event) => {
-    // Validate the message origin for security
-    if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
-        if (event.data === 'start-audio') {
-            const myAudio = document.getElementById('my-audio');
-            if (myAudio && !myAudio.paused) {
-                // If the audio is playing, do nothing to avoid restarting.
-            } else if (myAudio) {
-                myAudio.play();
-                const playPauseBtn = document.getElementById('play-pause-btn');
-                if (playPauseBtn) {
-                    playPauseBtn.textContent = '⏸';
+document.addEventListener('DOMContentLoaded', () => {
+    // This listener receives the message from the parent (Weebly) window
+    window.addEventListener('message', (event) => {
+        // Validate the message origin for security.
+        // The origin must be the full URL of your Weebly site.
+        if (event.origin === 'https://vishnusahasranaamam.weebly.com') {
+            try {
+                const message = JSON.parse(event.data);
+                if (message.type === 'gotoPage' && message.pageNumber) {
+                    const pdfViewerFrame = document.getElementById('pdf-viewer');
+                    if (pdfViewerFrame && pdfViewerFrame.contentWindow && pdfViewerFrame.contentWindow.PDFViewerApplication) {
+                        // PDF.js exposes a global application object to control the viewer.
+                        pdfViewerFrame.contentWindow.PDFViewerApplication.page = message.pageNumber;
+                    }
                 }
+            } catch (e) {
+                console.error('Failed to parse message:', e);
             }
         }
-    }
-});
+    });
 
-document.addEventListener('DOMContentLoaded', () => {
+    // --- All audio player and synchronization logic from your original code ---
+    // This entire section is moved here, as it needs to be on the same page as the PDF viewer.
+
     const myAudio = document.getElementById('my-audio');
     const pdfViewer = document.getElementById('pdf-viewer');
     const playPauseBtn = document.getElementById('play-pause-btn');
@@ -102,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isPlaying = !isPlaying;
     }
 
-    function syncPdfWithAudio() {
+    function syncPdfWithAudioInternal() {
         const currentTime = myAudio.currentTime;
         let targetPage = 1;
 
@@ -114,12 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (targetPage !== currentPage) {
             currentPage = targetPage;
-            if (pdfViewer.contentWindow) {
-                const pdfMessage = { type: 'gotoPage', pageNumber: targetPage };
-                
-                // Use the explicit origin of your embedded GitHub page.
-                const githubOrigin = 'https://naveen1241.github.io';
-                pdfViewer.contentWindow.postMessage(JSON.stringify(pdfMessage), githubOrigin);
+            // The PDF.js viewer exposes a global application object for control
+            const pdfViewerFrame = document.getElementById('pdf-viewer');
+            if (pdfViewerFrame && pdfViewerFrame.contentWindow && pdfViewerFrame.contentWindow.PDFViewerApplication) {
+                pdfViewerFrame.contentWindow.PDFViewerApplication.page = targetPage;
             }
         }
     }
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     myAudio.addEventListener('timeupdate', () => {
         updateProgress();
-        syncPdfWithAudio();
+        syncPdfWithAudioInternal();
     });
     myAudio.addEventListener('ended', () => {
         playPauseBtn.textContent = '▶';
