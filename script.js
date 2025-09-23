@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let pdfViewerReady = false;
     let scrollQueue = [];
     let isProcessingScroll = false;
+    let scrollRetryTimeout = null;
 
     // Listen for messages from the parent window (the Weebly page).
     window.addEventListener('message', (event) => {
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) {
                 if (event.data === 'start-audio') {
                     if (myAudio && !myAudio.paused) {
+                        // Audio is already playing, do nothing.
                     } else if (myAudio) {
                         myAudio.play().catch(error => {
                             console.error("Audio playback failed:", error);
@@ -77,7 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 pdfViewerReady = true;
                 processScrollQueue();
             });
-            // The pagerendered listener is removed to simplify timing.
+
+            viewerWindow.document.addEventListener('pagerendered', () => {
+                processScrollQueue();
+            });
         }
     });
 
@@ -89,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 isProcessingScroll = false;
                 processScrollQueue();
-            }, 600);
+            }, 600); // Wait for the scroll animation
         }
     }
 
@@ -153,34 +158,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (targetPage !== currentPage && pdfViewerReady) {
             currentPage = targetPage;
-            console.log('Adding to scroll queue:', targetPage);
             scrollQueue.push(targetPage);
-            processScrollQueue();
+            const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
+            if (viewerApp) {
+                viewerApp.page = targetPage;
+            }
         }
     }
 
     function smoothHalfPageScroll(pageNumber) {
         const viewerWindow = pdfViewer.contentWindow;
-        if (!viewerWindow || !viewerWindow.PDFViewerApplication) return;
-        
-        const viewerApp = viewerWindow.PDFViewerApplication;
-        const container = viewerApp.appConfig.mainContainer;
-        const pageView = viewerApp.pageViews.get(pageNumber - 1);
-        if (!pageView) {
-            scrollQueue.unshift(pageNumber);
+        if (!viewerWindow || !viewerWindow.PDFViewerApplication) {
+            console.warn("PDF viewer application not available.");
             return;
         }
-        viewerApp.page = pageNumber;
-        setTimeout(() => {
-            const pageHeight = pageView.div.clientHeight;
-            const containerHeight = container.clientHeight;
-            const targetScrollTop = pageView.div.offsetTop - (containerHeight / 2) + (pageHeight / 2);
-            console.log(`Scrolling to page ${pageNumber} at target position: ${targetScrollTop}`);
-            container.scrollTo({
-                top: targetScrollTop,
-                behavior: 'smooth'
-            });
-        }, 100);
+        
+        const viewerApp = viewerWindow.PDFViewerApplication;
+        const pageView = viewerApp.pageViews.get(pageNumber - 1);
+        if (!pageView) {
+            // Retry if the page view is not available yet
+            if (!scrollRetryTimeout) {
+                console.warn(`Page view for page ${pageNumber} not available yet. Retrying...`);
+                scrollRetryTimeout = setTimeout(() => {
+                    scrollRetryTimeout = null;
+                    smoothHalfPageScroll(pageNumber);
+                }, 100);
+            }
+            return;
+        }
+
+        const container = viewerApp.appConfig.mainContainer;
+        const pageHeight = pageView.div.clientHeight;
+        const containerHeight = container.clientHeight;
+        const targetScrollTop = pageView.div.offsetTop - (containerHeight / 2) + (pageHeight / 2);
+        
+        container.scrollTo({
+            top: targetScrollTop,
+            behavior: 'smooth'
+        });
     }
 
     playPauseBtn.addEventListener('click', togglePlayPause);
