@@ -89,12 +89,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function processScrollQueue() {
         if (scrollQueue.length > 0 && !isProcessingScroll) {
             isProcessingScroll = true;
-            const pageNumber = scrollQueue.shift();
+            const pageNumber = scrollQueue[0]; // Peek at the first item
             smoothHalfPageScroll(pageNumber);
             setTimeout(() => {
+                if (scrollQueue.length > 0 && scrollQueue[0] === pageNumber) {
+                    console.warn(`Could not scroll to page ${pageNumber} after retry.`);
+                    scrollQueue.shift(); // Remove the failed item
+                }
                 isProcessingScroll = false;
                 processScrollQueue();
-            }, 600); // Wait for the scroll animation
+            }, 600);
         }
     }
 
@@ -176,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewerApp = viewerWindow.PDFViewerApplication;
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
         if (!pageView) {
-            // Retry if the page view is not available yet
             if (!scrollRetryTimeout) {
                 console.warn(`Page view for page ${pageNumber} not available yet. Retrying...`);
                 scrollRetryTimeout = setTimeout(() => {
@@ -196,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
             top: targetScrollTop,
             behavior: 'smooth'
         });
+        scrollQueue.shift();
     }
 
     playPauseBtn.addEventListener('click', togglePlayPause);
