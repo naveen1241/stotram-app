@@ -149,6 +149,11 @@
             border-radius: 50%;
             background: var(--accent-color);
         }
+    /* Other styles... */
+    #pdf-viewer {
+        height: 1600px; /* Adjust this value as needed */
+    }
+       
     </style>
 </head>
 <body>
@@ -186,13 +191,14 @@
             </div>
         </div>
         <div class="pdf-container">
-            <iframe id="pdf-viewer"
-                src="./pdfjs-viewer/web/viewer.html?file=../VSN_Scrolling_Stotram.pdf#zoom=page-fit&pagemode=none">
-            </iframe>
+<iframe id="pdf-viewer"
+    src="./pdfjs-viewer/web/viewer.html?file=../VSN_Scrolling_Stotram.pdf#zoom=150">
+</iframe>
         </div>
     </div>
     
     <script src="script.js"></script>
 </body>
 </html>
+
 
