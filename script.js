@@ -38,8 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let pdfViewerReady = false;
     let scrollQueue = [];
     let isProcessingScroll = false;
-    let scrollRetryCount = 0;
-    const MAX_SCROLL_RETRIES = 5;
 
     // Listen for messages from the parent window (the Weebly page).
     window.addEventListener('message', (event) => {
@@ -56,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) {
                 if (event.data === 'start-audio') {
                     if (myAudio && !myAudio.paused) {
-                        // Audio is already playing, do nothing.
                     } else if (myAudio) {
                         myAudio.play().catch(error => {
                             console.error("Audio playback failed:", error);
@@ -80,24 +77,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 pdfViewerReady = true;
                 processScrollQueue();
             });
-
-            viewerWindow.document.addEventListener('pagerendered', () => {
-                processScrollQueue();
-            });
+            // The pagerendered listener is removed to simplify timing.
         }
     });
 
     function processScrollQueue() {
         if (scrollQueue.length > 0 && !isProcessingScroll) {
             isProcessingScroll = true;
-            const pageNumber = scrollQueue[0]; // Peek at the first item
+            const pageNumber = scrollQueue.shift();
             smoothHalfPageScroll(pageNumber);
             setTimeout(() => {
-                if (scrollQueue.length > 0 && scrollQueue[0] === pageNumber) {
-                    // If the item wasn't removed, it's a failure. Remove it.
-                    console.warn(`Could not scroll to page ${pageNumber} after retry.`);
-                    scrollQueue.shift();
-                }
                 isProcessingScroll = false;
                 processScrollQueue();
             }, 600);
@@ -166,48 +155,32 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPage = targetPage;
             console.log('Adding to scroll queue:', targetPage);
             scrollQueue.push(targetPage);
-            const viewerApp = pdfViewer.contentWindow.PDFViewerApplication;
-            if (viewerApp && viewerApp.page !== targetPage) {
-                viewerApp.page = targetPage;
-            }
+            processScrollQueue();
         }
     }
 
     function smoothHalfPageScroll(pageNumber) {
         const viewerWindow = pdfViewer.contentWindow;
-        if (!viewerWindow || !viewerWindow.PDFViewerApplication) {
-            console.warn("PDF viewer application not available.");
-            return;
-        }
+        if (!viewerWindow || !viewerWindow.PDFViewerApplication) return;
         
         const viewerApp = viewerWindow.PDFViewerApplication;
         const container = viewerApp.appConfig.mainContainer;
         const pageView = viewerApp.pageViews.get(pageNumber - 1);
-        
         if (!pageView) {
-            console.warn(`Page view for page ${pageNumber} not available yet. Retry attempt ${scrollRetryCount + 1}.`);
-            if (scrollRetryCount < MAX_SCROLL_RETRIES) {
-                scrollRetryCount++;
-                scrollQueue.unshift(pageNumber); // Push to the front of the queue
-                isProcessingScroll = false; // Release the lock
-            } else {
-                console.error(`Failed to scroll to page ${pageNumber} after multiple retries.`);
-                scrollRetryCount = 0;
-            }
+            scrollQueue.unshift(pageNumber);
             return;
         }
-
-        scrollRetryCount = 0; // Reset retry count on success
-        const pageHeight = pageView.div.clientHeight;
-        const containerHeight = container.clientHeight;
-        const targetScrollTop = pageView.div.offsetTop - (containerHeight / 2) + (pageHeight / 2);
-        
-        console.log(`Scrolling to page ${pageNumber} at target position: ${targetScrollTop}`);
-        container.scrollTo({
-            top: targetScrollTop,
-            behavior: 'smooth'
-        });
-        scrollQueue.shift(); // Remove the item after a successful scroll
+        viewerApp.page = pageNumber;
+        setTimeout(() => {
+            const pageHeight = pageView.div.clientHeight;
+            const containerHeight = container.clientHeight;
+            const targetScrollTop = pageView.div.offsetTop - (containerHeight / 2) + (pageHeight / 2);
+            console.log(`Scrolling to page ${pageNumber} at target position: ${targetScrollTop}`);
+            container.scrollTo({
+                top: targetScrollTop,
+                behavior: 'smooth'
+            });
+        }, 100);
     }
 
     playPauseBtn.addEventListener('click', togglePlayPause);
