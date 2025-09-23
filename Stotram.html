@@ -5,151 +5,195 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audio-Synced Stotram</title>
     <style>
-        /* Olive Dark Green Theme */
-        :root {
-            --primary-bg: #263238;
-            --secondary-bg: #37474f;
-            --accent-color: #6d8e57;
-            --text-color: #cfd8dc;
-            --light-text: #eceff1;
-        }
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background-color: var(--primary-bg);
-            color: var(--text-color);
-        }
-        .container-wrapper {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-color: var(--primary-bg);
-        }
-        .controls {
-            padding: 20px;
-            background-color: var(--secondary-bg);
-            border-bottom: 2px solid var(--accent-color);
-        }
-        .pdf-container {
-            flex: 1;
-            border: 1px solid var(--accent-color);
-            margin-top: 10px;
-        }
-        iframe {
-            border: none;
-            width: 100%;
-            height: 100%;
-        }
+    /* Olive Dark Green Theme */
+    :root {
+        --primary-bg: #263238;
+        --secondary-bg: #37474f;
+        --accent-color: #6d8e57;
+        --text-color: #cfd8dc;
+        --light-text: #eceff1;
+    }
+
+    /* General Layout and Structure */
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        font-family: Arial, sans-serif;
+        background-color: var(--primary-bg);
+        color: var(--text-color);
+    }
+    .container-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        background-color: var(--primary-bg);
+    }
+    .controls {
+        padding: 20px;
+        background-color: var(--secondary-bg);
+        border-bottom: 2px solid var(--accent-color);
+    }
+    .controls p {
+        font-size: 12px;
+        margin: 0 0 10px 0;
+    }
+    .pdf-container {
+        flex: 1;
+        border: 1px solid var(--accent-color);
+        margin-top: 10px;
+    }
+    iframe {
+        border: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Compact and Responsive Audio Player */
+    .custom-audio-player {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px; /* Reduced gap */
+        padding: 8px; /* Reduced padding */
+        background-color: var(--primary-bg);
+        border-radius: 8px;
+    }
+    .play-pause-btn {
+        background-color: var(--accent-color);
+        border: none;
+        color: var(--light-text);
+        font-size: 16px; /* Smaller font size */
+        padding: 8px; /* Standardized padding */
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        width: 40px; /* Fixed size for button */
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .play-pause-btn:hover {
+        background-color: #8da47f;
+    }
+    .progress-bar-container {
+        flex-grow: 1;
+        height: 6px; /* Thinner progress bar */
+        background-color: #546e7a;
+        border-radius: 4px;
+        position: relative;
+        cursor: pointer;
+        overflow: hidden;
+        z-index: 10;
+    }
+    .progress-bar {
+        height: 100%;
+        background-color: var(--accent-color);
+        border-radius: 4px;
+        width: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    .marker {
+        position: absolute;
+        top: 0;
+        width: 1px;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.5);
+        z-index: 12;
+    }
+    .marker-label {
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--secondary-bg);
+        color: var(--light-text);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    .marker:hover .marker-label {
+        opacity: 1;
+    }
+    .time-display {
+        font-size: 11px; /* Smaller font size */
+        color: var(--text-color);
+        white-space: nowrap;
+        min-width: 60px;
+        text-align: right;
+    }
+    .speed-control {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        font-size: 11px;
+    }
+    .speed-control select {
+        background-color: var(--secondary-bg);
+        color: var(--light-text);
+        border: 1px solid var(--accent-color);
+        border-radius: 4px;
+        padding: 2px;
+        cursor: pointer;
+        font-size: 11px;
+    }
+    .volume-control {
+        display: none; /* Hidden by default on small screens */
+    }
+    .volume-control input[type="range"] {
+        -webkit-appearance: none;
+        width: 80px;
+        height: 4px;
+        background: #546e7a;
+        border-radius: 2px;
+        cursor: pointer;
+    }
+    .volume-control input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 12px;
+        width: 12px;
+        border-radius: 50%;
+        background: var(--accent-color);
+    }
+    
+    /* Media query to restack on very narrow screens */
+    @media (max-width: 450px) {
         .custom-audio-player {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px;
-            background-color: var(--primary-bg);
-            border-radius: 8px;
-        }
-        .play-pause-btn {
-            background-color: var(--accent-color);
-            border: none;
-            color: var(--light-text);
-            font-size: 20px;
-            padding: 10px 15px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        .play-pause-btn:hover {
-            background-color: #8da47f;
-        }
-        .progress-bar-container {
-            flex-grow: 1;
-            height: 10px;
-            background-color: #546e7a;
-            border-radius: 4px;
-            position: relative;
-            cursor: pointer;
-            overflow: hidden;
-            z-index: 10;
-        }
-        .progress-bar {
-            height: 100%;
-            background-color: var(--accent-color);
-            border-radius: 4px;
-            width: 0;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        .marker {
-            position: absolute;
-            top: 0;
-            width: 1px;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.5);
-            z-index: 12;
-        }
-        .marker-label {
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--secondary-bg);
-            color: var(--light-text);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            white-space: nowrap;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        .marker:hover .marker-label {
-            opacity: 1;
+            flex-direction: column;
+            align-items: stretch;
         }
         .time-display {
-            font-size: 14px;
-            color: var(--text-color);
-            width: 80px;
-            text-align: center;
+            text-align: left;
         }
         .speed-control {
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            width: 100%;
+            justify-content: space-between;
         }
-        .speed-control select {
-            background-color: var(--secondary-bg);
-            color: var(--light-text);
-            border: 1px solid var(--accent-color);
-            border-radius: 4px;
-            padding: 4px;
-            cursor: pointer;
-        }
+    }
+    
+    /* Media query to show volume on wider mobile screens */
+    @media (min-width: 451px) {
         .volume-control {
             display: flex;
             align-items: center;
             gap: 5px;
         }
         .volume-control input[type="range"] {
-            -webkit-appearance: none;
-            width: 80px;
-            height: 4px;
-            background: #546e7a;
-            border-radius: 2px;
-            cursor: pointer;
+            width: 60px;
         }
-        .volume-control input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 12px;
-            width: 12px;
-            border-radius: 50%;
-            background: var(--accent-color);
-        }
-    </style>
+    }
+</style>
+
 </head>
 <body>
     <div class="container-wrapper">
@@ -194,5 +238,6 @@
     <script src="script.js"></script>
 </body>
 </html>
+
 
 
