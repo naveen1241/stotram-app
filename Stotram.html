@@ -150,9 +150,15 @@
             background: var(--accent-color);
         }
     /* Other styles... */
-    #pdf-viewer {
+   /* #pdf-viewer {
         height: 1600px; /* Adjust this value as needed */
-    }
+    }*/
+#pdf-viewer {
+  transform: scale(2); /* Doubles the size of the iframe and its content */
+  transform-origin: 0 0; /* Ensures the scaling happens from the top-left corner */
+  width: 50%; /* Adjust width to compensate for scaling */
+  height: 50%; /* Adjust height to compensate for scaling */
+}        
        
     </style>
 </head>
@@ -200,5 +206,6 @@
     <script src="script.js"></script>
 </body>
 </html>
+
 
 
