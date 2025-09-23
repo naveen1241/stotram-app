@@ -149,17 +149,6 @@
             border-radius: 50%;
             background: var(--accent-color);
         }
-    /* Other styles... */
-   /* #pdf-viewer {
-        height: 1600px; /* Adjust this value as needed */
-    }*/
-#pdf-viewer {
-  transform: scale(2); /* Doubles the size of the iframe and its content */
-  transform-origin: 0 0; /* Ensures the scaling happens from the top-left corner */
-  width: 50%; /* Adjust width to compensate for scaling */
-  height: 50%; /* Adjust height to compensate for scaling */
-}        
-       
     </style>
 </head>
 <body>
@@ -197,15 +186,12 @@
             </div>
         </div>
         <div class="pdf-container">
-<iframe id="pdf-viewer"
-    src="./pdfjs-viewer/web/viewer.html?file=../VSN_Scrolling_Stotram.pdf#zoom=150">
-</iframe>
+            <iframe id="pdf-viewer"
+                src="./pdfjs-viewer/web/viewer.html?file=../VSN_Scrolling_Stotram.pdf#zoom=150">
+            </iframe>
         </div>
     </div>
     
     <script src="script.js"></script>
 </body>
 </html>
-
-
-
